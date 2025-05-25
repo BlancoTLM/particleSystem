@@ -14,8 +14,8 @@ struct Particle {
             utils::rand(-1.0f, 1.0f)
         };
 
-        float angle = 0.0f;//utils::rand(0.0f, 360.0f);
-        float speed = 0.0f;//utils::rand(0.2f, 1.0f);
+        float angle = utils::rand(0.0f, 360.0f);
+        float speed = utils::rand(0.2f, 1.0f);
 
         velocity = glm::vec2{
             std::cos(angle) * speed,
@@ -45,15 +45,50 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         float dt = gl::delta_time_in_seconds();
-        const glm::vec2 gravity = glm::vec2(0.0f, -0.1f);
+        // const glm::vec2 gravity = glm::vec2(0.0f, -0.1f);
+
+        glm::vec2 mouse_pos = gl::mouse_position();
+        float spring_k = 5.0f;
+        float damping_d = 5.0f;
+        float max_distance = 0.5f;
 
         for (auto& p : particles)
         {
-            glm::vec2 force = gravity * p.mass;
-            glm::vec2 acceleration = force / p.mass;
+            // GRAVITY
+            // glm::vec2 force = gravity * p.mass;
+            // glm::vec2 acceleration = force / p.mass;
+            // p.velocity += acceleration * dt;
+
+            glm::vec2 spring_force = -spring_k * (p.position - mouse_pos);
+            glm::vec2 damping_force = -damping_d * p.velocity;
+            glm::vec2 total_force = spring_force + damping_force;
+            glm::vec2 acceleration = spring_force / p.mass;
 
             p.velocity += acceleration * dt;
-            p.position += p.velocity * dt;
+            glm::vec2 new_pos = p.position + p.velocity * dt;
+            glm::vec2 dir = new_pos - mouse_pos;
+            float dist = glm::length(dir);
+
+            if (dist <= max_distance)
+            {
+                p.position = new_pos;
+            }
+            else
+            {
+                glm::vec2 from_mouse = glm::normalize(p.position - mouse_pos);
+                glm::vec2 radial_velocity = glm::dot(p.velocity, from_mouse) * from_mouse;
+                glm::vec2 tangential_velocity = p.velocity - radial_velocity;
+
+                if (glm::dot(radial_velocity, from_mouse) < 0)
+                {
+                    p.position = new_pos;
+                }
+                else
+                {
+                    p.velocity = tangential_velocity;
+                    p.position += p.velocity * dt;
+                }
+            }
 
             utils::draw_disk(p.position, 0.02f, {1.0f, 0.5f, 0.2f, 1.0f});
         }
