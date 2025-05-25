@@ -47,6 +47,10 @@ struct Particle {
     }
 };
 
+float bounce(float x) {
+    return std::abs(std::sin(10.0f * 3.14f * x));
+}
+
 int main()
 {
     gl::init("Particules!");
@@ -124,8 +128,12 @@ int main()
             glm::vec4 color = glm::mix(p.color_start, p.color_end, t);
 
             float fade_time = 2.0f;
-            float radius_factor = glm::clamp((p.lifetime - p.age) / fade_time, 0.0f, 1.0f);
-            float radius = 0.1f * radius_factor;
+            float time_left = p.lifetime - p.age;
+            
+            float mask = glm::clamp((fade_time - time_left) / fade_time, 0.0f, 1.0f);
+            float base_radius = 0.1f * (1.0f - (p.age / p.lifetime));
+            float amplitude = 1.5f;
+            float radius = base_radius * (1.0f - mask) + base_radius * mask * (1.0f + amplitude * (bounce(time_left / fade_time) - 0.5f));
 
             utils::draw_disk(p.position, radius, color);
         }
