@@ -17,7 +17,7 @@ struct Particle {
         };
 
         float angle = utils::rand(0.0f, 360.0f);
-        float speed = utils::rand(0.2f, 1.0f);
+        float speed = utils::rand(0.01f, 0.2f);
 
         velocity = glm::vec2{
             std::cos(angle) * speed,
@@ -102,7 +102,9 @@ int main()
             p.age += dt;
             p.position += p.velocity * dt;
 
-            utils::draw_disk(p.position, 0.02f, {1.0f, 0.5f, 0.2f, 1.0f});
+            float life_ratio = 1.0f - (p.age / p.lifetime);
+            float radius = 0.02f * life_ratio;
+            utils::draw_disk(p.position, radius, {1.0f, 0.5f, 0.2f, 1.0f});
         }
     }
 }
