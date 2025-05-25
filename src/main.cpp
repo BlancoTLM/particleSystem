@@ -51,6 +51,13 @@ float bounce(float x) {
     return std::abs(std::sin(10.0f * 3.14f * x));
 }
 
+float easeInOutPower(float t, float power) {
+    if (t < 0.5f)
+        return 0.5f * std::pow(2.0f * t, power);
+    else
+        return 1.0f - 0.5f * std::pow(2.0f * (1.0f - t), power);
+}
+
 int main()
 {
     gl::init("Particules!");
@@ -70,13 +77,6 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         float dt = gl::delta_time_in_seconds();
-        // const glm::vec2 gravity = glm::vec2(0.0f, -0.1f);
-
-        // glm::vec2 mouse_pos = gl::mouse_position();
-        // float spring_k = 5.0f;
-        // float damping_d = 5.0f;
-        // float max_distance = 0.5f;
-
         particles.erase(
             std::remove_if(particles.begin(), particles.end(), [](const Particle& p)
             {return p.age >= p.lifetime;}),
@@ -85,46 +85,11 @@ int main()
 
         for (auto& p : particles)
         {
-            // GRAVITY
-            // glm::vec2 force = gravity * p.mass;
-            // glm::vec2 acceleration = force / p.mass;
-            // p.velocity += acceleration * dt;
-
-            // SPRING
-            // glm::vec2 spring_force = -spring_k * (p.position - mouse_pos);
-            // glm::vec2 damping_force = -damping_d * p.velocity;
-            // glm::vec2 total_force = spring_force + damping_force;
-            // glm::vec2 acceleration = spring_force / p.mass;
-            // p.velocity += acceleration * dt;
-            // glm::vec2 new_pos = p.position + p.velocity * dt;
-            // glm::vec2 dir = new_pos - mouse_pos;
-            // float dist = glm::length(dir);
-
-            // if (dist <= max_distance)
-            // {
-            //     p.position = new_pos;
-            // }
-            // else
-            // {
-            //     glm::vec2 from_mouse = glm::normalize(p.position - mouse_pos);
-            //     glm::vec2 radial_velocity = glm::dot(p.velocity, from_mouse) * from_mouse;
-            //     glm::vec2 tangential_velocity = p.velocity - radial_velocity;
-            //
-            //     if (glm::dot(radial_velocity, from_mouse) < 0)
-            //     {
-            //         p.position = new_pos;
-            //     }
-            //     else
-            //     {
-            //         p.velocity = tangential_velocity;
-            //         p.position += p.velocity * dt;
-            //     }
-            // }
-
             p.age += dt;
             p.position += p.velocity * dt;
 
-            float t = glm::clamp((p.age / p.lifetime) * 3.0f, 0.0f, 1.0f);
+            float raw_t = glm::clamp((p.age / p.lifetime) * 3.0f, 0.0f, 1.0f);
+            float t = easeInOutPower(raw_t, 2.0f);  // power=2 pour un easing doux
             glm::vec4 color = glm::mix(p.color_start, p.color_end, t);
 
             float fade_time = 2.0f;
