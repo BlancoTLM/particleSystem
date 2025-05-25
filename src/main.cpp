@@ -9,6 +9,8 @@ struct Particle {
     float mass;
     float age = 0.0f;
     float lifetime = 0.0f;
+    glm::vec4 color_start;
+    glm::vec4 color_end;
 
     Particle() {
         position = glm::vec2{
@@ -25,7 +27,23 @@ struct Particle {
         };
 
         mass = utils::rand(0.0f, 2.0f);
-        lifetime = utils::rand(1.0f, 5.0f);
+        lifetime = utils::rand(5.0f, 10.0f);
+
+        color_start = glm::vec4
+        {
+            utils::rand(0.5f, 1.0f),
+            utils::rand(0.5f, 1.0f),
+            utils::rand(0.5f, 1.0f),
+            1.0f
+        };
+
+        color_end = glm::vec4
+        {
+            utils::rand(0.5f, 1.0f),
+            utils::rand(0.5f, 1.0f),
+            utils::rand(0.5f, 1.0f),
+            1.0f
+        };
     }
 };
 
@@ -102,9 +120,14 @@ int main()
             p.age += dt;
             p.position += p.velocity * dt;
 
-            float life_ratio = 1.0f - (p.age / p.lifetime);
-            float radius = 0.02f * life_ratio;
-            utils::draw_disk(p.position, radius, {1.0f, 0.5f, 0.2f, 1.0f});
+            float t = glm::clamp((p.age / p.lifetime) * 3.0f, 0.0f, 1.0f);
+            glm::vec4 color = glm::mix(p.color_start, p.color_end, t);
+
+            float fade_time = 2.0f;
+            float radius_factor = glm::clamp((p.lifetime - p.age) / fade_time, 0.0f, 1.0f);
+            float radius = 0.1f * radius_factor;
+
+            utils::draw_disk(p.position, radius, color);
         }
     }
 }
