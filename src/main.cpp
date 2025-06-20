@@ -19,7 +19,7 @@ struct Particle {
             utils::rand(-1.0f, 1.0f)
         };
 
-        float angle = glm::radians(utils::rand(0.0f, 360.0f));
+        float angle = utils::rand(0.0f, 360.0f);
         float speed = utils::rand(0.1f, 0.2f);
 
         velocity = glm::vec2{
@@ -88,7 +88,7 @@ int main()
     gl::maximize_window();
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
+    
     std::array<glm::vec2, 5> star_points = {
         glm::vec2{ 0.0f,  0.5f},
         glm::vec2{ 0.4755f, 0.1545f},
@@ -116,24 +116,6 @@ int main()
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glm::vec2 mouse = gl::mouse_position();
-
-        glm::vec2 line_start = glm::vec2(0.0f, -1.0f);  // centre bas
-        glm::vec2 line_end = mouse;
-
-        utils::draw_line(line_start, line_end, 0.005f, glm::vec4(1, 0, 0, 1));
-            
-        for (const auto& seg : star_segments)
-        {
-            glm::vec2 start = star_points[seg.first];
-            glm::vec2 end = star_points[seg.second];
-            glm::vec2 hit_point;
-            if (segment_intersect(line_start, line_end, start, end, hit_point))
-            {
-                utils::draw_disk(hit_point, 0.02f, glm::vec4(1, 0, 1, 1)); // magenta pour différencier
-            }
-        }
-
         for (auto const& seg : star_segments)
         {
             glm::vec2 start = star_points[seg.first];
@@ -142,11 +124,6 @@ int main()
         }
 
         float dt = gl::delta_time_in_seconds();
-        // particles.erase(
-        //     std::remove_if(particles.begin(), particles.end(), [](const Particle& p)
-        //     {return p.age >= p.lifetime;}),
-        //     particles.end()
-        // );
 
         for (auto& p : particles)
         {
@@ -154,25 +131,32 @@ int main()
             glm::vec2 old_pos = p.position;
             glm::vec2 new_pos = p.position + p.velocity * dt;
             glm::vec2 hit_point;
+            bool hit = false;
 
-            for (auto& p : particles)
+            for (auto const& seg : star_segments)
             {
-                p.age += dt;
-                p.position += p.velocity * dt * 0.03f;
+                glm::vec2 start = star_points[seg.first];
+                glm::vec2 end = star_points[seg.second];
+
+                if (segment_intersect(old_pos, new_pos, start, end, hit_point))
+                {
+                    hit = true;
+                    glm::vec2 wall_dir = glm::normalize(end - start);
+                    glm::vec2 wall_normal = glm::vec2(-wall_dir.y, wall_dir.x);
+
+                    p.velocity = p.velocity - 2.0f * glm::dot(p.velocity, wall_normal) * wall_normal;
+
+                    float distance_behind = glm::length(new_pos - hit_point);
+                    p.position = hit_point + glm::normalize(p.velocity) * distance_behind;
+
+                    break;
+                }
             }
 
-            // particle lifespan
-            // float raw_t = glm::clamp((p.age / p.lifetime) * 3.0f, 0.0f, 1.0f);
-            // float t = easeInOutPower(raw_t, 2.0f);
-            // glm::vec4 color = glm::mix(p.color_start, p.color_end, t);
-
-            // float fade_time = 2.0f;
-            // float time_left = p.lifetime - p.age;
-            
-            // float mask = glm::clamp((fade_time - time_left) / fade_time, 0.0f, 1.0f);
-            // float base_radius = 0.1f * (1.0f - (p.age / p.lifetime));
-            // float amplitude = 1.5f;
-            // float radius = base_radius * (1.0f - mask) + base_radius * mask * (1.0f + amplitude * (bounce(time_left / fade_time) - 0.5f));
+            if (!hit)
+            {
+                p.position = new_pos;
+            }
 
             // particles do not die
             glm::vec4 color = p.color_start;
