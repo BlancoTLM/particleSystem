@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 struct Particle {
+    glm::vec2 oui;
     glm::vec2 position;
     glm::vec2 velocity;
     float mass;
@@ -14,10 +15,15 @@ struct Particle {
     glm::vec4 color_end;
 
     Particle() {
-        // Square
-        position = glm::vec2{
+
+        // Parallelogram
+        oui = glm::vec2{
             utils::rand(-0.5f, 0.5f),
             utils::rand(-0.5f, 0.5f)
+        };
+        position = glm::vec2{
+            oui.x + (oui.y/2),
+            oui.y
         };
 
         float angle = utils::rand(0.0f, 360.0f);
