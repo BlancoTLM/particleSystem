@@ -2,10 +2,10 @@
 #include "utils.hpp"
 #include <vector>
 #include <array>
+#include <numbers>
 #include <glm/glm.hpp>
 
 struct Particle {
-    glm::vec2 oui;
     glm::vec2 position;
     glm::vec2 velocity;
     float mass;
@@ -15,15 +15,17 @@ struct Particle {
     glm::vec4 color_end;
 
     Particle() {
+    
+        float Rmax = 1.0f;
+        float u = utils::rand(0.0f, 1.0f);
+        float v = utils::rand(0.0f, 1.0f);
 
-        // Parallelogram
-        oui = glm::vec2{
-            utils::rand(-0.5f, 0.5f),
-            utils::rand(-0.5f, 0.5f)
-        };
+        float r = Rmax * std::sqrt(u);
+        float theta = 2.0f * std::numbers::pi * v;
+
         position = glm::vec2{
-            oui.x + (oui.y/2),
-            oui.y
+            r * std::cos(theta),
+         r * std::sin(theta)
         };
 
         float angle = utils::rand(0.0f, 360.0f);
