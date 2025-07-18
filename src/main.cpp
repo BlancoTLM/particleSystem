@@ -5,7 +5,8 @@
 #include <numbers>
 #include <glm/glm.hpp>
 
-struct Particle {
+struct Particle
+{
 
     glm::vec2 position;
     glm::vec2 velocity;
@@ -13,7 +14,7 @@ struct Particle {
     glm::vec4 color_start;
 };
 
-void draw_parametric(std::function<glm::vec2(float)> const& parametric)
+void draw_parametric(std::function<glm::vec2(float)> const &parametric)
 {
     const float step = 0.01f;
     glm::vec4 color = {1.f, 1.f, 1.f, 1.f};
@@ -43,10 +44,11 @@ glm::vec2 bezier3_decasteljau(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec
     return lerp(d, e, t);
 }
 
-glm::vec2 bezier3_derivative(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, float t) {
+glm::vec2 bezier3_derivative(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, float t)
+{
     const float h = 1e-4f;
     glm::vec2 before = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t - h, 0.0f, 1.0f));
-    glm::vec2 after  = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t + h, 0.0f, 1.0f));
+    glm::vec2 after = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t + h, 0.0f, 1.0f));
     return (after - before) / (2.0f * h);
 }
 
@@ -85,31 +87,39 @@ int main()
 
     glm::vec2 p0 = {-0.8f, 0.0f};
     glm::vec2 p1 = {-0.4f, 0.8f};
-    glm::vec2 p2 = { 0.4f, -0.8f};
-    glm::vec2 p3 = { 0.8f, 0.0f};
+    glm::vec2 p2 = {0.4f, -0.8f};
+    glm::vec2 p3 = {0.8f, 0.0f};
 
     std::vector<Particle> particles;
     const int particle_count = 100;
-    for (int i = 0; i < particle_count; ++i)
+    int rows = 4;
+    int cols = 25;
+    float row_spacing = 0.03f;
+
+    for (int row = 0; row < rows; ++row)
     {
-        float t = static_cast<float>(i) / (particle_count - 1);
-        glm::vec2 pos = bezier3_decasteljau(p0, p1, p2, p3, t);
+        for (int col = 0; col < cols; ++col)
+        {
+            float t = static_cast<float>(col) / (cols - 1);
+            glm::vec2 pos_on_curve = bezier3_decasteljau(p0, p1, p2, p3, t);
 
-        const float delta = 0.001f;
-        glm::vec2 before = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t - delta, 0.f, 1.f));
-        glm::vec2 after  = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t + delta, 0.f, 1.f));
-        glm::vec2 tangent = glm::normalize(after - before);
+            glm::vec2 tangent = bezier3_derivative(p0, p1, p2, p3, t);
+            tangent = glm::normalize(tangent);
 
-        glm::vec2 normal = glm::vec2(-tangent.y, tangent.x);
+            glm::vec2 normal = glm::vec2(-tangent.y, tangent.x);
+            if (normal.y < 0)
+                normal = -normal;
 
-        float speed = 0.2f;
-        glm::vec2 velocity = normal * speed;
+            float offset_distance = 0.1f + row * row_spacing;
+            glm::vec2 offset = normal * offset_distance;
 
-        Particle p;
-        p.position = pos;
-        p.velocity = velocity;
-        p.color_start = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // rouge
-        particles.push_back(p);
+            Particle p;
+            p.position = pos_on_curve + offset;
+            p.velocity = glm::vec2(0.0f);
+            p.color_start = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // rouge
+
+            particles.push_back(p);
+        }
     }
 
     while (gl::window_is_open())
@@ -119,19 +129,42 @@ int main()
 
         float dt = gl::delta_time_in_seconds();
 
-        draw_parametric([&](float t) {
-            return bezier3_decasteljau(p0, p1, p2, p3, t);
-        });
+        draw_parametric([&](float t)
+                        { return bezier3_decasteljau(p0, p1, p2, p3, t); });
 
-        for (auto& p : particles)
+        for (auto &p : particles)
         {
+            glm::vec2 gravity = glm::vec2(0.0f, -1.0f);
+            p.velocity += gravity * dt;
+
+            float t_closest = find_closest_t_gradient_descent(p.position, p0, p1, p2, p3);
+            glm::vec2 curve_point = bezier3_decasteljau(p0, p1, p2, p3, t_closest);
+
+            const float delta = 0.001f;
+            glm::vec2 before = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t_closest - delta, 0.f, 1.f));
+            glm::vec2 after = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t_closest + delta, 0.f, 1.f));
+            glm::vec2 tangent = glm::normalize(after - before);
+            glm::vec2 normal = glm::vec2(-tangent.y, tangent.x);
+
+            if (normal.y < 0)
+                normal = -normal;
+
+            glm::vec2 to_curve = curve_point - p.position;
+            float distance = glm::length(to_curve);
+
+            if (distance < 0.02f)
+            {
+                float strength = 10.0f * std::exp(-20.0f * distance);
+                glm::vec2 bounce_force = normal * strength;
+
+                p.velocity += bounce_force * dt;
+            }
+
+            p.velocity *= 0.99f;
+
             p.position += p.velocity * dt;
 
-            glm::vec2 mouse_ndc = gl::mouse_position();
-            float t_closest = find_closest_t_gradient_descent(mouse_ndc, p0, p1, p2, p3);
-            glm::vec2 closest_point = bezier3_decasteljau(p0, p1, p2, p3, t_closest);
-
-            utils::draw_disk(closest_point, 0.015f, {1, 1, 0, 1}); // Jaune
+            utils::draw_disk(p.position, 0.01f, p.color_start);
         }
     }
-}
+};
