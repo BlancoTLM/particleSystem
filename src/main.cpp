@@ -87,6 +87,27 @@ glm::vec2 bezier2_bernstein(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, float t)
     return u * u * p0 + 2 * u * t * p1 + t * t * p2;
 }
 
+glm::vec2 bezier3_decasteljau(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, float t)
+{
+    glm::vec2 a = lerp(p0, p1, t);
+    glm::vec2 b = lerp(p1, p2, t);
+    glm::vec2 c = lerp(p2, p3, t);
+
+    glm::vec2 d = lerp(a, b, t);
+    glm::vec2 e = lerp(b, c, t);
+
+    return lerp(d, e, t);
+}
+
+glm::vec2 bezier3_bernstein(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, float t)
+{
+    float u = 1 - t;
+    return u * u * u * p0
+         + 3 * u * u * t * p1
+         + 3 * u * t * t * p2
+         + t * t * t * p3;
+}
+
 int main()
 {
     gl::init("Particules!");
@@ -132,10 +153,27 @@ int main()
         //     return bezier2_decasteljau({-0.8f, -0.5f}, {0.0f, 0.8f}, {0.8f, -0.5f}, t);
         // });
 
+        // draw_parametric([](float t) {
+        //     return bezier2_bernstein({-0.8f, -0.5f}, {0.0f, 0.8f}, {0.8f, -0.5f}, t);
+        // });
+
+        // draw_parametric([](float t) {
+        //     return bezier3_decasteljau(
+        // {-0.8f, 0.0f},
+        // {-0.4f, 0.8f},
+        // { 0.4f, -0.8f},
+        // { 0.8f, 0.0f},
+        // t
+        //  );});
+
         draw_parametric([](float t) {
-            return bezier2_bernstein({-0.8f, -0.5f}, {0.0f, 0.8f}, {0.8f, -0.5f}, t);
-        });
-
-
+    return bezier3_bernstein(
+        {-0.9f, 0.0f},
+        {-0.6f, 0.6f},
+        {-0.3f, -0.6f},
+        { 0.0f, 0.0f},
+        t
+    );
+});
     }
 }
