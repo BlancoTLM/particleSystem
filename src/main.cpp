@@ -59,15 +59,53 @@ void draw_parametric(std::function<glm::vec2(float)> const& parametric)
     }
 }
 
-glm::vec2 heart(float t)
+glm::vec2 lerp(glm::vec2 a, glm::vec2 b, float t)
 {
-    float angle = t * 2.0f * std::numbers::pi;
-    float x = 0.36f * std::sin(angle) * std::sin(angle) * std::sin(angle);
-    float y = 0.33f * std::cos(angle)
-              - 0.05f * std::cos(2 * angle)
-              - 0.02f * std::cos(3 * angle)
-              - 0.01f * std::cos(4 * angle);
-    return glm::vec2{x, y};
+    return (1.0f - t) * a + t * b;
+}
+
+glm::vec2 bezier1_decasteljau(glm::vec2 p0, glm::vec2 p1, float t)
+{
+    return lerp(p0, p1, t);
+}
+
+glm::vec2 bezier1_bernstein(glm::vec2 p0, glm::vec2 p1, float t)
+{
+    return (1 - t) * p0 + t * p1;
+}
+
+glm::vec2 bezier2_decasteljau(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, float t)
+{
+    glm::vec2 a = lerp(p0, p1, t);
+    glm::vec2 b = lerp(p1, p2, t);
+    return lerp(a, b, t);
+}
+
+glm::vec2 bezier2_bernstein(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, float t)
+{
+    float u = 1 - t;
+    return u * u * p0 + 2 * u * t * p1 + t * t * p2;
+}
+
+glm::vec2 bezier3_decasteljau(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, float t)
+{
+    glm::vec2 a = lerp(p0, p1, t);
+    glm::vec2 b = lerp(p1, p2, t);
+    glm::vec2 c = lerp(p2, p3, t);
+
+    glm::vec2 d = lerp(a, b, t);
+    glm::vec2 e = lerp(b, c, t);
+
+    return lerp(d, e, t);
+}
+
+glm::vec2 bezier3_bernstein(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, float t)
+{
+    float u = 1 - t;
+    return u * u * u * p0
+         + 3 * u * u * t * p1
+         + 3 * u * t * t * p2
+         + t * t * t * p3;
 }
 
 int main()
@@ -103,6 +141,15 @@ int main()
             float radius = 0.01f;
         }
 
-        draw_parametric(heart);
+        // Ordre 1 - De Casteljau
+// draw_parametric([](float t) {
+//     return bezier1_decasteljau({-0.8f, -0.8f}, {0.8f, 0.8f}, t);
+// });
+
+// Ordre 1 - Bernstein
+draw_parametric([](float t) {
+    return bezier1_bernstein({-0.8f, -0.8f}, {0.8f, 0.8f}, t);
+});
+
     }
 }
