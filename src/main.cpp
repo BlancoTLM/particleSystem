@@ -59,10 +59,15 @@ void draw_parametric(std::function<glm::vec2(float)> const& parametric)
     }
 }
 
-glm::vec2 circle(float t)
+glm::vec2 heart(float t)
 {
-    float angle = 2.0f * std::numbers::pi * t;
-    return glm::vec2{0.5f * std::cos(angle), 0.5f * std::sin(angle)};
+    float angle = t * 2.0f * std::numbers::pi;
+    float x = 0.36f * std::sin(angle) * std::sin(angle) * std::sin(angle);
+    float y = 0.33f * std::cos(angle)
+              - 0.05f * std::cos(2 * angle)
+              - 0.02f * std::cos(3 * angle)
+              - 0.01f * std::cos(4 * angle);
+    return glm::vec2{x, y};
 }
 
 int main()
@@ -98,6 +103,6 @@ int main()
             float radius = 0.01f;
         }
 
-        draw_parametric(circle);
+        draw_parametric(heart);
     }
 }
