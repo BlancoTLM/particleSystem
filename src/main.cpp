@@ -56,18 +56,28 @@ int main()
     glm::vec2 p3 = { 0.8f, 0.0f};
 
     std::vector<Particle> particles;
-   const int particle_count = 100;
-for (int i = 0; i < particle_count; ++i)
-{
-    float t = static_cast<float>(i) / (particle_count - 1); // Échantillons réguliers entre 0 et 1
-    glm::vec2 pos = bezier3_decasteljau(p0, p1, p2, p3, t);
+    const int particle_count = 100;
+    for (int i = 0; i < particle_count; ++i)
+    {
+        float t = static_cast<float>(i) / (particle_count - 1);
+        glm::vec2 pos = bezier3_decasteljau(p0, p1, p2, p3, t);
 
-    Particle p;
-    p.position = pos;
-    p.velocity = glm::vec2(0.0f);
-    p.color_start = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // rouge
-    particles.push_back(p);
-}
+        const float delta = 0.001f;
+        glm::vec2 before = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t - delta, 0.f, 1.f));
+        glm::vec2 after  = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t + delta, 0.f, 1.f));
+        glm::vec2 tangent = glm::normalize(after - before);
+
+        glm::vec2 normal = glm::vec2(-tangent.y, tangent.x);
+
+        float speed = 0.2f;
+        glm::vec2 velocity = normal * speed;
+
+        Particle p;
+        p.position = pos;
+        p.velocity = velocity;
+        p.color_start = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // rouge
+        particles.push_back(p);
+    }
 
     while (gl::window_is_open())
     {
@@ -82,6 +92,7 @@ for (int i = 0; i < particle_count; ++i)
 
         for (auto& p : particles)
         {
+            p.position += p.velocity * dt;
             utils::draw_disk(p.position, 0.01f, p.color_start);
         }
     }
