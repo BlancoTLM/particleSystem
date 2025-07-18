@@ -36,18 +36,7 @@ struct Particle {
             std::sin(angle) * speed
         };
 
-        mass = utils::rand(0.0f, 2.0f);
-        lifetime = utils::rand(5.0f, 10.0f);
-
         color_start = glm::vec4
-        {
-            1.0f,
-            1.0f,
-            1.0f,
-            1.0f
-        };
-
-        color_end = glm::vec4
         {
             1.0f,
             1.0f,
@@ -56,6 +45,25 @@ struct Particle {
         };
     }
 };
+
+void draw_parametric(std::function<glm::vec2(float)> const& parametric)
+{
+    const float step = 0.01f;
+    glm::vec4 color = {1.f, 1.f, 1.f, 1.f};
+
+    for (float t = 0.0f; t < 1.0f; t += step)
+    {
+        glm::vec2 p0 = parametric(t);
+        glm::vec2 p1 = parametric(t + step);
+        utils::draw_line(p0, p1, 0.005f, color);
+    }
+}
+
+glm::vec2 circle(float t)
+{
+    float angle = 2.0f * std::numbers::pi * t;
+    return glm::vec2{0.5f * std::cos(angle), 0.5f * std::sin(angle)};
+}
 
 int main()
 {
@@ -88,8 +96,8 @@ int main()
             // particles do not die
             glm::vec4 color = p.color_start;
             float radius = 0.01f;
-
-            utils::draw_disk(p.position, radius, color);
         }
+
+        draw_parametric(circle);
     }
 }
