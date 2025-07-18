@@ -166,14 +166,26 @@ int main()
         // t
         //  );});
 
+        // draw_parametric([](float t) {
+        //     return bezier3_bernstein(
+        // {-0.9f, 0.0f},
+        // {-0.6f, 0.6f},
+        // {-0.3f, -0.6f},
+        // { 0.0f, 0.0f},
+        // t
+        // );});
+
         draw_parametric([](float t) {
-    return bezier3_bernstein(
-        {-0.9f, 0.0f},
-        {-0.6f, 0.6f},
-        {-0.3f, -0.6f},
-        { 0.0f, 0.0f},
-        t
-    );
-});
+            glm::vec2 mouse = gl::mouse_position();
+
+           glm::vec2 p0 = {-0.9f, 0.0f};
+           glm::vec2 p3 = { 0.9f, 0.0f};
+
+          glm::vec2 p1 = glm::mix(p0, mouse, 1.0f);
+            glm::vec2 p2 = glm::mix(p3, mouse, 1.0f);
+
+           return bezier3_bernstein(p0, p1, p2, p3, t);
+        });
+
     }
 }
