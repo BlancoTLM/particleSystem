@@ -43,6 +43,39 @@ glm::vec2 bezier3_decasteljau(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec
     return lerp(d, e, t);
 }
 
+glm::vec2 bezier3_derivative(glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3, float t) {
+    const float h = 1e-4f;
+    glm::vec2 before = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t - h, 0.0f, 1.0f));
+    glm::vec2 after  = bezier3_decasteljau(p0, p1, p2, p3, glm::clamp(t + h, 0.0f, 1.0f));
+    return (after - before) / (2.0f * h);
+}
+
+float find_closest_t_gradient_descent(glm::vec2 point,
+                                      glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3)
+{
+    float t = 0.5f;
+    const float learning_rate = 0.01f;
+    const int max_iterations = 100;
+    const float epsilon = 1e-5f;
+
+    for (int i = 0; i < max_iterations; ++i)
+    {
+        glm::vec2 b = bezier3_decasteljau(p0, p1, p2, p3, t);
+        glm::vec2 b_deriv = bezier3_derivative(p0, p1, p2, p3, t);
+
+        float gradient = 2.0f * glm::dot(b - point, b_deriv);
+
+        t -= learning_rate * gradient;
+
+        t = glm::clamp(t, 0.0f, 1.0f);
+
+        if (std::abs(gradient) < epsilon)
+            break;
+    }
+
+    return t;
+};
+
 int main()
 {
     gl::init("Particules!");
@@ -93,7 +126,12 @@ int main()
         for (auto& p : particles)
         {
             p.position += p.velocity * dt;
-            utils::draw_disk(p.position, 0.01f, p.color_start);
+
+            glm::vec2 mouse_ndc = gl::mouse_position();
+            float t_closest = find_closest_t_gradient_descent(mouse_ndc, p0, p1, p2, p3);
+            glm::vec2 closest_point = bezier3_decasteljau(p0, p1, p2, p3, t_closest);
+
+            utils::draw_disk(closest_point, 0.015f, {1, 1, 0, 1}); // Jaune
         }
     }
 }
